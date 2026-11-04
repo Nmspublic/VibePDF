@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VibePDF — Incremental Editor</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #0b0d12;
+  --panel: #131722;
+  --panel2: #191f2c;
+  --border: #293244;
+  --text: #edf1f8;
+  --muted: #8994a8;
+  --accent: #9b87ff;
+  --accent2: #7660ed;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+}
+header {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border);
+  background: #10141d;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 750;
+  letter-spacing: -.4px;
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #a795ff, #7059e9);
+  color: white;
+  font-weight: 900;
+}
+.brand small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  margin-top: 2px;
+}
+.status {
+  color: #a7b0c1;
+  font-size: 12px;
+}
+main {
+  display: grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  min-height: calc(100vh - 68px);
+}
+.sidebar {
+  padding: 24px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+}
+.section-title {
+  margin: 0 0 15px;
+  color: #aab4c7;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+}
+.upload-box {
+  border: 1px dashed #4b5670;
+  border-radius: 12px;
+  padding: 22px 14px;
+  text-align: center;
+  background: #171d2a;
+}
+.upload-icon {
+  font-size: 27px;
+  margin-bottom: 9px;
+}
+.upload-box p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.upload-box small {
+  color: var(--muted);
+  font-size: 11px;
+}
+input[type="file"] { display: none; }
+.primary, .secondary {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+.primary {
+  color: white;
+  background: var(--accent2);
+}
+.primary:hover { background: #8874fa; }
+.secondary {
+  color: #d5dbea;
+  background: #252d3d;
+  border: 1px solid #364157;
+}
+.upload-box .primary { margin-top: 15px; }
+.control-section {
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+.field { margin-bottom: 15px; }
+.field label {
+  display: block;
+  margin-bottom: 7px;
+  color: #aab4c7;
+  font-size: 11px;
+  font-weight: 650;
+}
+.field input[type="text"],
+.field input[type="number"],
+.field select {
+  width: 100%;
+  padding: 10px 11px;
+  color: var(--text);
+  background: #0e131d;
+  border: 1px solid #303a4d;
+  border-radius: 7px;
+  outline: none;
+}
+.field input:focus, .field select:focus {
+  border-color: var(--accent);
+}
+.field input[type="color"] {
+  width: 100%;
+  height: 38px;
+  padding: 3px;
+  background: #0e131d;
+  border: 1px solid #303a4d;
+  border-radius: 7px;
+}
+.field input[type="range"] { width: 100%; }
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.actions {
+  display: grid;
+  gap: 9px;
+  margin-top: 23px;
+}
+.actions button { width: 100%; }
+.workspace {
+  min-width: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+.toolbar h1 {
+  margin: 0;
+  font-size: 16px;
+}
+.toolbar p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.preview-wrap {
+  flex: 1;
+  min-height: 550px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 40%, #20283a 0, #111722 60%);
+}
+#pdfPreview {
+  width: 100%;
+  height: 100%;
+  min-height: 650px;
+  border: 0;
+  background: #242a35;
+}
+.empty-state {
+  max-width: 340px;
+  padding: 30px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-state strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #e3e8f2;
+  font-size: 15px;
+}
+.notice {
+  margin-top: 15px;
+  padding: 12px 14px;
+  border: 1px solid #3b365d;
+  border-radius: 8px;
+  background: #19172b;
+  color: #bcb3ff;
+  font-size: 11px;
+  line-height: 1.6;
+}
+#message {
+  min-height: 18px;
+  margin-top: 12px;
+  color: #aab4c7;
+  font-size: 11px;
+  line-height: 1.5;
+}
+@media(max-width: 850px) {
+  main { grid-template-columns: 1fr; }
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .workspace { padding: 15px; }
+  .preview-wrap { min-height: 500px; }
+  #pdfPreview { min-height: 500px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">V</div>
+    <div>
+      VibePDF
+      <small>INCREMENTAL EDITOR</small>
+    </div>
+  </div>
+  <div class="status">Browser-only · No upload server</div>
+</header>
+
+<main>
+  <aside class="sidebar">
+    <h2 class="section-title">01 / Source document</h2>
+
+    <div class="upload-box">
+      <div class="upload-icon">📄</div>
+      <p>Open an existing PDF</p>
+      <small>Your document stays in this browser</small>
+      <label for="pdfInput" class="primary" style="display:inline-block; margin-top:15px; cursor:pointer;">
+        Choose PDF
+      </label>
+      <input id="pdfInput" type="file" accept="application/pdf,.pdf">
+    </div>
+
+    <div class="control-section">
+      <h2 class="section-title">02 / Text overlay</h2>
+
+      <div class="field">
+        <label for="overlayText">Text to add</label>
+        <input id="overlayText" type="text" placeholder="Enter your text">
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="posX">Horizontal position</label>
+          <input id="posX" type="number" min="0" value="60">
+        </div>
+        <div class="field">
+          <label for="posY">Vertical position</label>
+          <input id="posY" type="number" min="0" value="80">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fontSize">Font size</label>
+        <input id="fontSize" type="range" min="6" max="72" value="18">
+        <small id="fontSizeValue">18 pt</small>
+      </div>
+
+      <div class="field">
+        <label for="textColor">Text colour</label>
+        <input id="textColor" type="color" value="#222222">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="downloadBtn" disabled>
+        Download edited PDF
+      </button>
+      <button class="secondary" id="resetBtn">
+        Reset editor
+      </button>
+    </div>
+
+    <div id="message">Choose a PDF to begin.</div>
+
+    <div class="notice">
+      This experimental editor uses native PDF incremental updates.
+      It does not rasterize the original document. Compatibility depends
+      on the PDF's internal structure.
+    </div>
+  </aside>
+
+  <section class="workspace">
+    <div class="toolbar">
+      <div>
+        <h1>Document preview</h1>
+        <p id="fileInfo">No PDF selected</p>
+      </div>
+      <span class="status">LIVE PREVIEW</span>
+    </div>
+
+    <div class="preview-wrap" id="previewWrap">
+      <div class="empty-state" id="emptyState">
+        <strong>Your PDF will appear here</strong>
+        Upload a PDF document to view it in the native browser viewer.
+      </div>
+      <iframe id="pdfPreview" title="PDF preview" hidden></iframe>
+    </div>
+  </section>
+</main>
+
+<script>
+/* PART 2 CONTINUES HERE */
+</script>
+
+</body>
+</html>
