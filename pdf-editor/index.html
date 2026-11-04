@@ -1,0 +1,872 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10131c">
+<title>InvoiceLite — PDF Editor</title>
+
+<style>
+:root {
+  --bg:#0d1018;
+  --panel:#151a26;
+  --border:#2b3446;
+  --text:#f1f3f9;
+  --muted:#929caf;
+  --accent:#927cff;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,Arial,sans-serif;
+}
+header {
+  height:68px;padding:0 25px;display:flex;
+  align-items:center;justify-content:space-between;
+  background:#111622;border-bottom:1px solid var(--border);
+}
+.brand {display:flex;align-items:center;gap:12px;font-weight:800}
+.logo {
+  width:36px;height:36px;border-radius:10px;
+  display:grid;place-items:center;
+  background:linear-gradient(135deg,#ad9aff,#7258e9);
+}
+.brand small {
+  display:block;font-size:9px;letter-spacing:1.5px;
+  color:var(--muted);margin-top:3px;
+}
+.muted {color:var(--muted);font-size:11px}
+.app {min-height:calc(100vh - 68px);display:grid;
+  grid-template-columns:320px minmax(0,1fr)}
+.sidebar {
+  padding:23px;background:var(--panel);
+  border-right:1px solid var(--border)
+}
+.heading {
+  margin:0 0 15px;color:#b7c0d1;font-size:11px;
+  letter-spacing:1.2px;font-weight:800
+}
+.upload {
+  padding:23px 15px;text-align:center;background:#1a2030;
+  border:1px dashed #58627b;border-radius:12px
+}
+.upload strong {display:block;font-size:13px;margin:9px}
+.upload p {margin:0;color:var(--muted);font-size:11px}
+.upload label {
+  display:inline-block;margin-top:16px;cursor:pointer
+}
+input[type=file] {display:none}
+button {
+  border:0;cursor:pointer;font-family:inherit;
+  font-weight:700;border-radius:8px;padding:11px 14px;
+  font-size:12px
+}
+button:disabled {opacity:.4;cursor:not-allowed}
+.primary {color:white;background:var(--accent)}
+.primary:hover {background:#a493ff}
+.secondary {color:#dce2ef;background:#283144;
+  border:1px solid #3a465d}
+.section {margin-top:26px;padding-top:22px;
+  border-top:1px solid var(--border)}
+.field {margin-bottom:15px}
+.field label {
+  display:block;margin-bottom:7px;font-size:11px;
+  font-weight:700;color:#b3bdd0
+}
+.field input {
+  width:100%;padding:11px;color:white;background:#101521;
+  border:1px solid #354057;border-radius:7px;outline:none
+}
+.field input:focus {border-color:var(--accent)}
+.field input[type=color] {height:39px;padding:3px}
+.field input[type=range] {padding:0;accent-color:var(--accent)}
+.field-row {display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.value-note {color:var(--muted);font-size:10px}
+.actions {display:grid;gap:9px;margin-top:22px}
+.actions button {width:100%}
+#status {min-height:40px;margin-top:15px;font-size:11px;
+  line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.info {
+  margin-top:14px;padding:12px 14px;border-radius:8px;
+  background:#1d1a32;border:1px solid #413866;
+  color:#c6baff;font-size:11px;line-height:1.6
+}
+.workspace {min-width:0;padding:23px;display:flex;flex-direction:column}
+.toolbar {display:flex;justify-content:space-between;
+  align-items:center;margin-bottom:16px;gap:10px}
+.toolbar h1 {margin:0;font-size:17px}
+.toolbar p {margin:5px 0 0;font-size:11px;color:var(--muted)}
+.preview {flex:1;min-height:600px;position:relative;
+  overflow:hidden;border:1px solid var(--border);
+  border-radius:12px;background:#171e2b}
+#pdfFrame {width:100%;height:100%;min-height:600px;
+  border:0;background:#252b37}
+.empty {
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:center;padding:25px;
+  text-align:center;color:var(--muted);font-size:12px
+}
+.empty strong {color:white;font-size:15px;margin-bottom:9px}
+@media(max-width:850px) {
+  .app {grid-template-columns:1fr}
+  .sidebar {border-right:0;border-bottom:1px solid var(--border)}
+  .workspace {padding:14px}
+  .preview,#pdfFrame {min-height:500px}
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">I</div>
+    <div>InvoiceLite<small>PDF EDITOR</small></div>
+  </div>
+  <div class="muted">Private · Browser-only</div>
+</header>
+
+<div class="app">
+<aside class="sidebar">
+
+  <h2 class="heading">01 — Existing document</h2>
+  <div class="upload">
+    <div style="font-size:30px">📄</div>
+    <strong>Upload your PDF</strong>
+    <p>Select an existing PDF document</p>
+    <label for="pdfFile" class="primary" style="padding:11px 14px;border-radius:8px;font-size:12px">
+      Choose PDF
+    </label>
+    <input id="pdfFile" type="file" accept=".pdf,application/pdf">
+  </div>
+
+  <div class="section">
+    <h2 class="heading">02 — Text overlay</h2>
+
+    <div class="field">
+      <label for="overlayText">Your text</label>
+      <input id="overlayText" type="text" maxlength="2000"
+        placeholder="Enter text to add">
+    </div>
+
+    <div class="field">
+      <label for="pageNumber">Page number</label>
+      <input id="pageNumber" type="number" min="1" value="1">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="posX">X position (pt)</label>
+        <input id="posX" type="number" min="0" value="60">
+      </div>
+      <div class="field">
+        <label for="posY">Y position (pt)</label>
+        <input id="posY" type="number" min="0" value="100">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="fontSize">Font size</label>
+      <input id="fontSize" type="range" min="6" max="72" value="18">
+      <span class="value-note" id="fontValue">18 pt</span>
+    </div>
+
+    <div class="field">
+      <label for="textColor">Text colour</label>
+      <input id="textColor" type="color" value="#222222">
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="downloadBtn" disabled>
+      Download edited PDF
+    </button>
+    <button class="secondary" id="resetBtn">Reset editor</button>
+  </div>
+
+  <div id="status">Upload a PDF to get started.</div>
+
+  <div class="info">
+    The original PDF is preserved. The editor creates a new
+    incremental revision. Only supported PDF structures can
+    be edited safely.
+  </div>
+</aside>
+
+<section class="workspace">
+  <div class="toolbar">
+    <div>
+      <h1>Document preview</h1>
+      <p id="fileInfo">No document loaded</p>
+    </div>
+    <span class="muted">NATIVE PDF VIEWER</span>
+  </div>
+
+  <div class="preview">
+    <div class="empty" id="emptyState">
+      <strong>Your document appears here</strong>
+      Upload a PDF to see its original pages.
+    </div>
+    <iframe id="pdfFrame" title="PDF preview" hidden></iframe>
+  </div>
+</section>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const encoder = new TextEncoder();
+const decoder = new TextDecoder("latin1");
+
+let originalBytes = null;
+let originalName = "document.pdf";
+let structure = null;
+let pages = [];
+let previewURL = null;
+
+function status(message, error = false) {
+  $("status").textContent = message;
+  $("status").style.color = error ? "#ff7777" : "#aab4c7";
+}
+
+function bytesToString(bytes) {
+  return decoder.decode(bytes);
+}
+
+function skipSpace(s, i) {
+  while (i < s.length) {
+    if (/\s/.test(s[i]) || s.charCodeAt(i) === 0) {
+      i++;
+      continue;
+    }
+    if (s[i] === "%") {
+      while (i < s.length && s[i] !== "\n" && s[i] !== "\r") i++;
+      continue;
+    }
+    break;
+  }
+  return i;
+}
+
+function readName(s, i) {
+  if (s[i] !== "/") throw Error("Expected a PDF name.");
+  let j = i + 1;
+  while (j < s.length && !/[\s()[\]<>/%]/.test(s[j])) j++;
+  return {value:s.slice(i + 1,j),end:j};
+}
+
+function readAtom(s, i) {
+  let j = i;
+  while (j < s.length && !/[\s()[\]<>/%]/.test(s[j])) j++;
+  if (j === i) throw Error("Invalid PDF token.");
+  return {value:s.slice(i,j),end:j};
+}
+
+/* Read the end of one PDF value, including nested arrays and dictionaries. */
+function valueEnd(s, start) {
+  let i = skipSpace(s,start);
+  const c = s[i];
+
+  if (c === "(") {
+    let depth = 1;
+    i++;
+    while (i < s.length && depth) {
+      if (s[i] === "\\") { i += 2; continue; }
+      if (s[i] === "(") depth++;
+      if (s[i] === ")") depth--;
+      i++;
+    }
+    if (depth) throw Error("Unclosed PDF string.");
+    return i;
+  }
+
+  if (c === "<" && s[i+1] === "<") {
+    i += 2;
+    while (i < s.length) {
+      i = skipSpace(s,i);
+      if (s[i] === ">" && s[i+1] === ">") return i+2;
+      const name = readName(s,i);
+      i = valueEnd(s,name.end);
+    }
+    throw Error("Unclosed PDF dictionary.");
+  }
+
+  if (c === "[") {
+    i++;
+    while (i < s.length) {
+      i = skipSpace(s,i);
+      if (s[i] === "]") return i+1;
+      i = valueEnd(s,i);
+    }
+    throw Error("Unclosed PDF array.");
+  }
+
+  if (c === "<") {
+    const end = s.indexOf(">",i+1);
+    if (end < 0) throw Error("Unclosed PDF hex string.");
+    return end+1;
+  }
+
+  if (c === "/") return readName(s,i).end;
+
+  const first = readAtom(s,i);
+  let end = first.end;
+
+  /* Detect an indirect reference: object generation R. */
+  const secondStart = skipSpace(s,end);
+  if (/^\d+$/.test(first.value) && secondStart < s.length) {
+    const second = readAtom(s,secondStart);
+    const thirdStart = skipSpace(s,second.end);
+    if (/^\d+$/.test(second.value) && s[thirdStart] === "R") {
+      return thirdStart+1;
+    }
+  }
+  return end;
+}
+
+function dictionarySpan(s) {
+  const start = s.indexOf("<<");
+  if (start < 0) throw Error("PDF dictionary not found.");
+  const end = valueEnd(s,start);
+  return {start,end,text:s.slice(start,end)};
+}
+
+function dictionaryEntries(dict) {
+  const d = dictionarySpan(dict);
+  const result = [];
+  let i = d.start+2;
+
+  while (i < d.end-2) {
+    i = skipSpace(dict,i);
+    if (dict[i] === ">" && dict[i+1] === ">") break;
+    if (dict[i] !== "/") throw Error("Unsupported PDF dictionary syntax.");
+
+    const name = readName(dict,i);
+    const start = skipSpace(dict,name.end);
+    const end = valueEnd(dict,start);
+
+    result.push({
+      key:name.value,
+      start,
+      end,
+      value:dict.slice(start,end)
+    });
+    i = end;
+  }
+  return result;
+}
+
+function getEntry(dict,key) {
+  return dictionaryEntries(dict).find(e => e.key === key) || null;
+}
+
+function putEntry(dict,key,value) {
+  const entry = getEntry(dict,key);
+  const span = dictionarySpan(dict);
+  if (entry) {
+    return dict.slice(0,entry.start) + value + dict.slice(entry.end);
+  }
+  return dict.slice(0,span.end-2) +
+    " /" + key + " " + value + " " + dict.slice(span.end-2);
+}
+
+function parseReference(value) {
+  const m = value.match(/^\s*(\d+)\s+(\d+)\s+R\s*$/);
+  return m ? {id:Number(m[1]),generation:Number(m[2])} : null;
+}
+
+function referencesInArray(value) {
+  const inside = value.slice(1,value.lastIndexOf("]"));
+  const refs = [...inside.matchAll(/(\d+)\s+(\d+)\s+R/g)];
+  return refs.map(m => m[0]);
+}
+
+function extractObject(bytes,offset) {
+  const s = bytesToString(bytes);
+  const header = s.slice(offset).match(/^(\d+)\s+(\d+)\s+obj\b/);
+  if (!header) throw Error("Invalid object at byte offset " + offset);
+
+  const start = offset + header[0].length;
+  const end = s.indexOf("endobj",start);
+  if (end < 0) throw Error("PDF object has no endobj marker.");
+
+  return {
+    id:Number(header[1]),
+    generation:Number(header[2]),
+    body:s.slice(start,end).trim()
+  };
+}
+
+function objectById(id) {
+  const entry = structure.entries.get(id);
+  if (!entry || !entry.inUse) throw Error("Missing PDF object " + id);
+  return extractObject(originalBytes,entry.offset);
+}
+
+function parseXref(bytes) {
+  const s = bytesToString(bytes);
+  const sx = [...s.matchAll(/startxref\s+(\d+)/g)].pop();
+  if (!sx) throw Error("Cannot find startxref.");
+
+  let offset = Number(sx[1]);
+  let latestTrailer = null;
+  const entries = new Map();
+  const visited = new Set();
+
+  while (offset !== null) {
+    if (visited.has(offset)) throw Error("Invalid xref Prev chain.");
+    visited.add(offset);
+
+    if (s.slice(offset,offset+4) !== "xref") {
+      throw Error("Unsupported PDF: cross-reference streams are not supported.");
+    }
+
+    const section = s.slice(offset);
+    const trailerAt = section.indexOf("trailer");
+    if (trailerAt < 0) throw Error("Xref trailer missing.");
+
+    const xrefLines = section.slice(4,trailerAt).split(/\r?\n/);
+    let line = 0;
+
+    while (line < xrefLines.length) {
+      const h = xrefLines[line].trim().match(/^(\d+)\s+(\d+)$/);
+      if (!h) { line++; continue; }
+
+      const first = Number(h[1]);
+      const count = Number(h[2]);
+      line++;
+
+      for (let n=0;n<count;n++,line++) {
+        const m = (xrefLines[line] || "").match(
+          /^(\d{10})\s+(\d{5})\s+([nf])/
+        );
+        if (!m) throw Error("Malformed xref entry.");
+        const id = first+n;
+        if (!entries.has(id)) {
+          entries.set(id,{
+            offset:Number(m[1]),
+            generation:Number(m[2]),
+            inUse:m[3] === "n"
+          });
+        }
+      }
+    }
+
+    const trailerText = section.slice(trailerAt+7);
+    const trailer = dictionarySpan(trailerText).text;
+    if (!latestTrailer) latestTrailer = trailer;
+
+    const prev = getEntry(trailer,"Prev");
+    offset = prev ? Number(prev.value) : null;
+  }
+
+  if (!latestTrailer) throw Error("Trailer not found.");
+  if (getEntry(latestTrailer,"Encrypt")) {
+    throw Error("Encrypted PDFs are not supported.");
+  }
+
+  const root = getEntry(latestTrailer,"Root");
+  const size = getEntry(latestTrailer,"Size");
+  if (!root || !size) throw Error("PDF trailer is incomplete.");
+
+  const rootRef = parseReference(root.value);
+  if (!rootRef) throw Error("Invalid catalog reference.");
+
+  return {
+    entries,
+    rootId:rootRef.id,
+    rootGeneration:rootRef.generation,
+    size:Number(size.value),
+    latestTrailer,
+    startXref:Number(sx[1])
+  };
+}
+
+function parseBox(value) {
+  if (!value) return null;
+  const m = value.match(/\[\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)\s*\]/);
+  return m ? m.slice(1).map(Number) : null;
+}
+
+function parsePages() {
+  const catalog = objectById(structure.rootId);
+  const catalogDict = dictionarySpan(catalog.body).text;
+  const pagesRef = parseReference(getEntry(catalogDict,"Pages")?.value || "");
+
+  if (!pagesRef) throw Error("Cannot locate the PDF page tree.");
+
+  const result = [];
+
+  function walk(id,inheritedBox,inheritedResources) {
+    const obj = objectById(id);
+    const dict = dictionarySpan(obj.body).text;
+
+    const type = getEntry(dict,"Type")?.value || "";
+    const box = parseBox(getEntry(dict,"MediaBox")?.value) || inheritedBox;
+    const resources = getEntry(dict,"Resources")?.value || inheritedResources;
+
+    if (/^\/Page\b/.test(type)) {
+      if (!box) throw Error("A page has no readable MediaBox.");
+      result.push({
+        id:obj.id,
+        generation:obj.generation,
+        dict,
+        box,
+        resources
+      });
+      return;
+    }
+
+    const kids = getEntry(dict,"Kids");
+    if (!kids || !kids.value.startsWith("[")) {
+      throw Error("Unsupported page tree.");
+    }
+
+    for (const ref of referencesInArray(kids.value)) {
+      const parsed = parseReference(ref);
+      walk(parsed.id,box,resources);
+    }
+  }
+
+  walk(pagesRef.id,null,null);
+
+  if (!result.length) throw Error("No pages found in the PDF.");
+  return result;
+}
+
+function allocateId() {
+  const id = structure.size;
+  structure.size++;
+  return id;
+}
+
+function resolveResources(raw) {
+  if (!raw) return "<< >>";
+
+  const ref = parseReference(raw);
+  if (ref) {
+    return dictionarySpan(objectById(ref.id).body).text;
+  }
+
+  if (raw.startsWith("<<")) {
+    return dictionarySpan(raw).text;
+  }
+
+  throw Error("Unsupported PDF resources structure.");
+}
+
+function addFontToResources(raw,fontRef,fontKey) {
+  let resources = resolveResources(raw);
+  const fontEntry = getEntry(resources,"Font");
+  let fonts = "<< >>";
+
+  if (fontEntry) {
+    const fontReference = parseReference(fontEntry.value);
+    if (fontReference) {
+      fonts = dictionarySpan(objectById(fontReference.id).body).text;
+    } else if (fontEntry.value.startsWith("<<")) {
+      fonts = dictionarySpan(fontEntry.value).text;
+    } else {
+      throw Error("Unsupported font resource dictionary.");
+    }
+  }
+
+  fonts = putEntry(fonts,fontKey,fontRef);
+  resources = putEntry(resources,"Font",fonts);
+  return resources;
+}
+
+function pdfStringHex(text) {
+  let output = "";
+  for (const char of text) {
+    const cp = char.codePointAt(0);
+    if (cp > 255) {
+      throw Error(
+        "This basic Helvetica editor supports WinAnsi characters only. " +
+        "Please remove unsupported characters or use a compatible font."
+      );
+    }
+    output += cp.toString(16).padStart(2,"0");
+  }
+  return "<" + output.toUpperCase() + ">";
+}
+
+function pdfNumber(n) {
+  if (!Number.isFinite(n)) throw Error("Invalid numeric position.");
+  return String(Math.round(n*1000)/1000);
+}
+
+function makeContent(text,x,y,size,color,fontKey) {
+  const r = parseInt(color.slice(1,3),16)/255;
+  const g = parseInt(color.slice(3,5),16)/255;
+  const b = parseInt(color.slice(5,7),16)/255;
+
+  return "q\nBT\n/" + fontKey + " " + pdfNumber(size) +
+    " Tf\n" + pdfNumber(r) + " " + pdfNumber(g) + " " +
+    pdfNumber(b) + " rg\n" +
+    pdfNumber(x) + " " + pdfNumber(y) + " Td\n" +
+    pdfStringHex(text) + " Tj\nET\nQ\n";
+}
+
+function trailerValue(key) {
+  return getEntry(structure.latestTrailer,key)?.value || null;
+}
+
+function buildIncrementalUpdate(page,text,x,y,size,color) {
+  const fontId = allocateId();
+  const streamId = allocateId();
+  const resourceId = allocateId();
+
+  const fontKey = "ILF" + fontId;
+  const fontRef = fontId + " 0 R";
+  const streamRef = streamId + " 0 R";
+  const resourceRef = resourceId + " 0 R";
+
+  const resources = addFontToResources(
+    page.resources,fontRef,fontKey
+  );
+
+  const pageDict = putEntry(
+    page.dict,"Resources",resourceRef
+  );
+
+  const oldContents = getEntry(page.dict,"Contents");
+  let contentArray = [];
+
+  if (oldContents) {
+    const value = oldContents.value.trim();
+
+    if (value.startsWith("[")) {
+      contentArray = referencesInArray(value);
+    } else if (parseReference(value)) {
+      contentArray = [value];
+    } else {
+      throw Error(
+        "This page uses a direct content stream. It is not supported."
+      );
+    }
+  }
+
+  contentArray.push(streamRef);
+  const updatedPageDict = putEntry(
+    pageDict,"Contents","[" + contentArray.join(" ") + "]"
+  );
+
+  const stream = makeContent(text,x,y,size,color,fontKey);
+  const streamLength = encoder.encode(stream).length;
+
+  const objects = [
+    {
+      id:fontId,
+      generation:0,
+      body:"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"
+    },
+    {
+      id:resourceId,
+      generation:0,
+      body:resources
+    },
+    {
+      id:streamId,
+      generation:0,
+      body:"<< /Length " + streamLength + " >>\nstream\n" +
+        stream + "endstream"
+    },
+    {
+      id:page.id,
+      generation:page.generation,
+      body:updatedPageDict
+    }
+  ];
+
+  /* Keep the output entirely ASCII so byte offsets remain exact. */
+  let appended = "\n";
+  const xrefEntries = [];
+
+  for (const obj of objects) {
+    const offset = originalBytes.length + encoder.encode(appended).length;
+    if (offset > 9999999999) throw Error("PDF offset is too large.");
+
+    xrefEntries.push({
+      id:obj.id,
+      offset,
+      generation:obj.generation
+    });
+
+    appended += obj.id + " " + obj.generation + " obj\n" +
+      obj.body + "\nendobj\n";
+  }
+
+  const xrefOffset = originalBytes.length + encoder.encode(appended).length;
+  appended += "xref\n";
+
+  xrefEntries.sort((a,b)=>a.id-b.id);
+
+  for (const entry of xrefEntries) {
+    appended += entry.id + " 1\n";
+    appended += String(entry.offset).padStart(10,"0") + " " +
+      String(entry.generation).padStart(5,"0") + " n \n";
+  }
+
+  let trailer = "<< /Size " + structure.size +
+    " /Root " + structure.rootId + " " +
+    structure.rootGeneration + " R";
+
+  const info = trailerValue("Info");
+  const id = trailerValue("ID");
+
+  if (info) trailer += " /Info " + info;
+  if (id) trailer += " /ID " + id;
+
+  trailer += " /Prev " + structure.startXref + " >>";
+
+  appended += "trailer\n" + trailer +
+    "\nstartxref\n" + xrefOffset + "\n%%EOF\n";
+
+  return appended;
+}
+
+function downloadEditedPDF() {
+  try {
+    if (!originalBytes || !structure) {
+      throw Error("Upload a PDF first.");
+    }
+
+    const text = $("overlayText").value;
+    if (!text.trim()) throw Error("Enter the text you want to add.");
+
+    const pageNumber = Number($("pageNumber").value);
+    if (!Number.isInteger(pageNumber) ||
+        pageNumber < 1 || pageNumber > pages.length) {
+      throw Error("Enter a valid page number.");
+    }
+
+    const page = pages[pageNumber-1];
+    const x = Number($("posX").value);
+    const y = Number($("posY").value);
+    const size = Number($("fontSize").value);
+    const color = $("textColor").value;
+
+    if (![x,y,size].every(Number.isFinite) || x < 0 || y < 0) {
+      throw Error("Enter valid text coordinates and font size.");
+    }
+
+    const appended = buildIncrementalUpdate(
+      page,text,x,y,size,color
+    );
+
+    const blob = new Blob(
+      [originalBytes,encoder.encode(appended)],
+      {type:"application/pdf"}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    const base = originalName.replace(/\.pdf$/i,"");
+    a.href = url;
+    a.download = base + "-edited.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    status("Edited PDF created and download started.");
+  } catch (error) {
+    status(error.message || "Could not create the edited PDF.",true);
+  }
+}
+
+async function loadPDF(file) {
+  if (!file) return;
+
+  if (!file.name.toLowerCase().endsWith(".pdf")) {
+    status("Please select a PDF file.",true);
+    return;
+  }
+
+  try {
+    status("Reading and analysing PDF...");
+    originalBytes = new Uint8Array(await file.arrayBuffer());
+    originalName = file.name;
+
+    if (bytesToString(originalBytes.slice(0,5)) !== "%PDF-") {
+      throw Error("This file does not have a valid PDF header.");
+    }
+
+    structure = parseXref(originalBytes);
+    pages = parsePages();
+
+    if (previewURL) URL.revokeObjectURL(previewURL);
+
+    previewURL = URL.createObjectURL(
+      new Blob([originalBytes],{type:"application/pdf"})
+    );
+
+    $("pdfFrame").src = previewURL;
+    $("pdfFrame").hidden = false;
+    $("emptyState").hidden = true;
+    $("fileInfo").textContent =
+      file.name + " · " + pages.length + " page(s) · " +
+      (file.size/1024).toFixed(1) + " KB";
+
+    $("pageNumber").max = pages.length;
+    $("pageNumber").value = 1;
+    $("downloadBtn").disabled = false;
+
+    status(
+      "PDF loaded successfully. " + pages.length +
+      " pages detected. Select a page and add your text."
+    );
+  } catch (error) {
+    originalBytes = null;
+    structure = null;
+    pages = [];
+    $("downloadBtn").disabled = true;
+
+    status(error.message || "Unable to read this PDF.",true);
+  }
+}
+
+$("pdfFile").addEventListener("change",event=>{
+  loadPDF(event.target.files[0]);
+});
+
+$("fontSize").addEventListener("input",()=>{
+  $("fontValue").textContent = $("fontSize").value + " pt";
+});
+
+$("downloadBtn").addEventListener("click",downloadEditedPDF);
+
+$("resetBtn").addEventListener("click",()=>{
+  originalBytes = null;
+  structure = null;
+  pages = [];
+  originalName = "document.pdf";
+
+  if (previewURL) {
+    URL.revokeObjectURL(previewURL);
+    previewURL = null;
+  }
+
+  $("pdfFile").value = "";
+  $("pdfFrame").removeAttribute("src");
+  $("pdfFrame").hidden = true;
+  $("emptyState").hidden = false;
+  $("fileInfo").textContent = "No document loaded";
+  $("overlayText").value = "";
+  $("pageNumber").value = 1;
+  $("posX").value = 60;
+  $("posY").value = 100;
+  $("fontSize").value = 18;
+  $("fontValue").textContent = "18 pt";
+  $("textColor").value = "#222222";
+  $("downloadBtn").disabled = true;
+
+  status("Editor reset. Upload another PDF to begin.");
+});
+
+</script>
+</body>
+</html>
